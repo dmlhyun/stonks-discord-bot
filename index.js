@@ -1,13 +1,13 @@
 require("dotenv").config();
 const axios = require("axios");
-const Discord = require("discord.js");
-const { commandParser, parseData } = require("./helper");
+const { Client } = require("discord.js");
+const { commandParser, parseData, embeddedMessage } = require("./helper");
 
 const TOKEN = process.env.TOKEN;
 const API_KEY = process.env.ALPHA_VANTAGE_API_TOKEN;
 const BASE_URL = process.env.ALPHA_VANTAGE_BASE_URL;
 
-const client = new Discord.Client();
+const client = new Client();
 
 axios.defaults.baseURL = BASE_URL;
 
@@ -22,6 +22,7 @@ client.on("message", (message) => {
   if (message.content === "ping") {
     message.channel.send("Pong!");
   }
+
   if (message.content.startsWith(PREFIX)) {
     const { args } = commandParser({ message, prefix: PREFIX });
 
@@ -55,7 +56,7 @@ client.on("message", (message) => {
       .then(([quoteData, overviewData]) => {
         const parsedData = parseData({ quoteData, overviewData });
         console.log(parsedData);
-        message.channel.send("got data");
+        message.channel.send(embeddedMessage(parsedData));
       })
       .catch((error) => {
         console.log(error);
