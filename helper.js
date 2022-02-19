@@ -52,7 +52,7 @@ const embeddedMessage = ({
   dividendYield,
 }) => {
   const embed = new MessageEmbed()
-    .setColor("#0099ff")
+    .setColor("#7ED321")
     .setTitle(`${name}, ${symbol}`)
     .addFields(
       {
