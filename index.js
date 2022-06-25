@@ -1,6 +1,5 @@
 require("dotenv").config();
 const { Client } = require("discord.js");
-const { createClient } = require('redis');
 const {
   commandParser,
   parseStockResponse,
@@ -10,20 +9,15 @@ const {
 } = require("./helper");
 const { getNews } = require('./news');
 const { getStockOverview, getStockQuote } = require('./stock');
+const { STONK_PREFIX, NEWS_PREFIX } = require('./constants');
 
 const TOKEN = process.env.DISCORD_TOKEN;
 
 const discord = new Client();
-const redis = createClient();
-
-redis.on('error', (err) => console.log('Redis Client Error', err));
 
 discord.on("ready", () => {
   console.log(`Logged in as ${discord.user.tag}!`);
 });
-
-const STONK_PREFIX = "?stonk";
-const NEWS_PREFIX = "?news";
 
 discord.on("message", (message) => {
   if (message.author.bot) return;
