@@ -1,62 +1,61 @@
 require("dotenv").config();
-const axios = require("axios");
 const { Client } = require("discord.js");
-const { commandParser, parseData, embeddedMessage } = require("./helper");
+const { createClient } = require('redis');
+const {
+  commandParser,
+  parseStockResponse,
+  embeddedStockMessage,
+  parseNewsResponse,
+  embeddedNewsMessage
+} = require("./helper");
+const { getNews } = require('./news');
+const { getStockOverview, getStockQuote } = require('./stock');
 
-const TOKEN = process.env.TOKEN;
-const API_KEY = process.env.ALPHA_VANTAGE_API_TOKEN;
-const BASE_URL = process.env.ALPHA_VANTAGE_BASE_URL;
+const TOKEN = process.env.DISCORD_TOKEN;
 
-const client = new Client();
+const discord = new Client();
+const redis = createClient();
 
-axios.defaults.baseURL = BASE_URL;
+redis.on('error', (err) => console.log('Redis Client Error', err));
 
-client.on("ready", () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+discord.on("ready", () => {
+  console.log(`Logged in as ${discord.user.tag}!`);
 });
 
-const PREFIX = "?";
+const STONK_PREFIX = "?stonk";
+const NEWS_PREFIX = "?news";
 
-client.on("message", (message) => {
+discord.on("message", (message) => {
   if (message.author.bot) return;
   if (message.content === "ping") {
     message.channel.send("Pong!");
   }
 
-  if (message.content.startsWith(PREFIX)) {
-    const { args } = commandParser({ message, prefix: PREFIX });
+  if (message.content.startsWith(STONK_PREFIX)) {
+    const { args } = commandParser({ message, prefix: STONK_PREFIX });
 
-    const overview = axios
-      .get("/query", {
-        params: {
-          function: "OVERVIEW",
-          symbol: args[0],
-          apikey: API_KEY,
-        },
-      })
-      .then((response) => {
-        const { data } = response;
-        return data;
-      });
-
-    const quote = axios
-      .get("/query", {
-        params: {
-          function: "GLOBAL_QUOTE",
-          symbol: args[0],
-          apikey: API_KEY,
-        },
-      })
-      .then((response) => {
-        const { data } = response;
-        return data;
-      });
-
-    Promise.all([quote, overview])
+    Promise.all([getStockQuote(args[0]), getStockOverview(args[0])])
       .then(([quoteData, overviewData]) => {
-        const parsedData = parseData({ quoteData, overviewData });
+        const parsedData = parseStockResponse({ quoteData, overviewData });
         console.log(parsedData);
-        message.channel.send(embeddedMessage(parsedData));
+        message.channel.send(embeddedStockMessage(parsedData));
+      })
+      .catch((error) => {
+        console.log(error);
+        message.channel.send("Oops something went wrong");
+      });
+  }
+
+  if (message.content.startsWith(NEWS_PREFIX)) {
+    const { args } = commandParser({ message, prefix: NEWS_PREFIX });
+
+    Promise.all([getNews(args[0])])
+      .then(([news]) => {
+        const parsedData = parseNewsResponse(news);
+        console.log(news);
+        parsedData.forEach(article => {
+          message.channel.send(embeddedNewsMessage(article));
+        });
       })
       .catch((error) => {
         console.log(error);
@@ -65,4 +64,4 @@ client.on("message", (message) => {
   }
 });
 
-client.login(TOKEN);
+discord.login(TOKEN);

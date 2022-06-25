@@ -8,11 +8,15 @@ const commandParser = ({ prefix, message }) => {
   return { commandBody, args, command };
 };
 
-const parseData = ({ quoteData, overviewData }) => {
+const parseStockResponse = ({ quoteData, overviewData }) => {
   return {
     ...parseQuoteData(quoteData),
     ...parseOverviewData(overviewData),
   };
+};
+
+const parseNewsResponse = (newsData) => {
+  return newsData.articles
 };
 
 const parseQuoteData = (data) => {
@@ -37,7 +41,7 @@ const parseOverviewData = (data) => {
   };
 };
 
-const embeddedMessage = ({
+const embeddedStockMessage = ({
   name,
   symbol,
   price,
@@ -119,6 +123,18 @@ const embeddedMessage = ({
   return embed;
 };
 
+const embeddedNewsMessage = (article) => {
+  const embed = new MessageEmbed()
+    .setColor("#7ED321")
+    .setTitle(article.title)
+    .setDescription(article.description)
+    .setThumbnail(article.urlToImage)
+    .setURL(article.url)
+    .setTimestamp(article.publishedAt);
+
+  return embed;
+};
+
 const currencyFormat = (val) => {
   return numeral(val).format("$0,0.00");
 };
@@ -141,6 +157,8 @@ const codeBlockFormat = (str) => {
 
 module.exports = {
   commandParser,
-  parseData,
-  embeddedMessage,
+  parseStockResponse,
+  embeddedStockMessage,
+  parseNewsResponse,
+  embeddedNewsMessage
 };
